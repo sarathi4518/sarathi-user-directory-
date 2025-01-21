@@ -1,70 +1,219 @@
-# Getting Started with Create React App
+# React User Directory Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is a React-based web application that displays a directory of users, allows searching and sorting through the list, and provides detailed views of individual users. It also includes error handling and a 404 Not Found page.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Table of Contents
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Components](#components)
+  - [App.js](#appjs)
+  - [Home.js](#homejs)
+  - [UserDetail.js](#userdetailjs)
+  - [NotFound.js](#notfoundjs)
+- [Dependencies](#dependencies)
+- [Screenshots](#screenshots)
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Features
+1. **User Directory**: Displays a list of users fetched from an API.
+2. **Search**: Filter users by name.
+3. **Sorting**: Sort users alphabetically (A-Z or Z-A).
+4. **User Details**: View detailed information about a specific user.
+5. **Error Handling**: Display error messages when the API fails.
+6. **404 Not Found Page**: Handle invalid routes with a fallback page.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## Installation
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   ```
 
-### `npm run build`
+2. Navigate to the project directory:
+   ```bash
+   cd <project-directory>
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+4. Start the development server:
+   ```bash
+   npm start
+   ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The application will be available at `http://localhost:3000`.
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Usage
+- Navigate to the home page to view a list of users.
+- Search or sort users as needed.
+- Click on a user to view detailed information.
+- Use the back button or browser navigation to return to the home page.
+- Navigate to an invalid URL to see the 404 Not Found page.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Project Structure
+```
+src/
+├── components/
+│   ├── Home.js
+│   ├── UserDetail.js
+│   ├── NotFound.js
+├── assets/
+│   └── error--img.png
+├── App.js
+├── index.js
+├── index.css
+└── App.css
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
-## Learn More
+## Components
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### App.js
+This is the root component that defines the application routes using `react-router-dom`.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```jsx
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
-### Code Splitting
+import Home from "./components/Home";
+import UserDetail from "./components/UserDetail";
+import NotFound from "./components/NotFound";
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+import "./App.css";
 
-### Analyzing the Bundle Size
+function App() {
+  return (
+    <div className="App">
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/users/:id" element={<UserDetail />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+    </div>
+  );
+}
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+export default App;
+```
 
-### Making a Progressive Web App
+### Home.js
+Displays a list of users fetched from an API with search and sorting functionalities.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```jsx
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { FaSearch } from "react-icons/fa";
+import { NameInitialsAvatar } from "react-name-initials-avatar";
+import { ColorRing } from "react-loader-spinner";
+import errorImg from "./error--img.png";
+import "./index.css";
 
-### Advanced Configuration
+const Home = () => {
+  const [userList, setUserList] = useState([]);
+  const [originalUserList, setOriginalUserList] = useState([]);
+  const [sortOption, setSortOption] = useState("default");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/users")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setUserList(data);
+        setOriginalUserList(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
 
-### Deployment
+  const handleUserClick = (id) => {
+    navigate(`/users/${id}`);
+  };
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+  if (loading) {
+    return (
+      <div className="loader-container">
+        <ColorRing height="180" width="180" colors={["#e15b64", "#f47e60"]} />
+      </div>
+    );
+  }
 
-### `npm run build` fails to minify
+  if (error) {
+    return (
+      <div className="error-container">
+        <img src={errorImg} alt="Error" className="error-image" />
+        <h1>{error}</h1>
+        <button onClick={() => window.location.reload()} className="retry-button">Retry</button>
+      </div>
+    );
+  }
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+  return (
+    <div>
+      {/* Content here */}
+    </div>
+  );
+};
+
+export default Home;
+```
+
+### UserDetail.js
+Displays detailed information about a specific user.
+
+### NotFound.js
+Displays a 404 error message for undefined routes.
+
+---
+
+## Dependencies
+
+- **react-router-dom**: For navigation and routing.
+- **react-icons**: For icons.
+- **react-loader-spinner**: For the loading spinner.
+- **react-name-initials-avatar**: For generating user avatars.
+
+Install these dependencies with:
+```bash
+npm install react-router-dom react-icons react-loader-spinner react-name-initials-avatar
+```
+
+---
+
+## Screenshots
+
+### Home Page
+> Displays a list of users with search and sorting functionality.
+
+### User Detail Page
+> Detailed information about a user.
+
+### 404 Page
+> Displays a custom error message for invalid routes.
+
